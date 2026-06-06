@@ -1,0 +1,24 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Outer medical study binder border -->
+    <path
+        android:fillColor="#34D399"
+        android:pathData="M 32 26 L 76 26 C 80 26, 82 28, 82 32 L 82 76 C 82 80, 80 82, 76 82 L 32 82 C 28 82, 26 80, 26 76 L 26 32 C 26 28, 28 26, 32 26 Z" />
+    <!-- Dark contrast core space -->
+    <path
+        android:fillColor="#15133C"
+        android:pathData="M 31 31 L 77 31 L 77 77 L 31 77 Z" />
+    <!-- Centered glowing medical cross -->
+    <path
+        android:fillColor="#34D399"
+        android:pathData="M 50 40 H 58 V 48 H 66 V 56 H 58 V 64 H 50 V 56 H 42 V 48 H 50 Z" />
+    <!-- Open note page lines representing study logs -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:pathData="M 38 68 H 70 M 38 72 H 58" />
+</vector>

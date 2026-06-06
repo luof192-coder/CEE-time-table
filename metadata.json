@@ -1,0 +1,8 @@
+{
+  "name": "Remix: CEE Study Planner",
+  "description": "Interactive day-by-day 60-Day MEC CEE Study Tracker with integrated real-time Score Calculator and Pomodoro focus timer.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
