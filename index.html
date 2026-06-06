@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CEE Study Planner & Tracker - Web Edition</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Inter & Space Grotesk Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  
+  <!-- Alpine.js CDN for elegant state handling -->
+  <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+  
+  <!-- Font Configuration -->
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    .heading-font {
+      font-family: 'Space Grotesk', sans-serif;
+    }
+  </style>
+  
+  <!-- Tailwind Colors configuration -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            slate: {
+              50: '#F8FAFC',
+              100: '#F1F5F9',
+              200: '#E2E8F0',
+              400: '#94A3B8',
+              700: '#334155',
+              800: '#1E293B',
+              900: '#0F172A',
+              955: '#0B0F19' // premium cosmic slate shadow background
+            },
+            indigo: {
+              900: '#1e1b4b',
+              950: '#0c0a09'
+            },
+            emerald: {
+              550: '#059669',
+              600: '#0596 Emerald'
+            }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-[#F8FAFC] min-h-screen flex flex-col antialiased text-slate-800" x-data="ceeApp()">
+
+  <!-- ================= TOP PREMIUM GRADIENT HEADER ================= -->
+  <header class="bg-gradient-to-r from-slate-955 via-slate-900 to-indigo-900 text-white shadow-lg overflow-hidden border-b border-slate-800">
+    <div class="max-w-4xl mx-auto px-6 pt-7 pb-6 relative">
+      <!-- Decorative faint glowing orb inside banner -->
+      <div class="absolute right-12 top-2 w-32 h-32 bg-indigo-600/10 rounded-full blur-2xl pointer-events-none"></div>
+      
+      <div class="flex items-end justify-between">
+        <div>
+          <span class="text-[10px] tracking-[0.16em] uppercase font-bold text-indigo-300 block">CEE NEPAL 2026</span>
+          <h1 class="heading-font text-2xl md:text-3xl font-black text-white mt-1">Study Mastery Tracker</h1>
+          <p class="text-xs text-slate-400 mt-1">60-Day Interactive Syllabus, MEC Calculator & Pomodoro Focus Timer</p>
+        </div>
+        <div class="text-right">
+          <span class="text-2xl font-black text-emerald-400 font-mono tracking-tight" x-text="'Day ' + completedCount()">Day 0</span>
+          <span class="text-[10px] text-slate-400 block tracking-wider font-extrabold" x-text="'OF ' + allDays.length + ' DAYS DONE'">OF 60 DAYS DONE</span>
+        </div>
+      </div>
+
+      <!-- PREMIUM SLIMMING PROGRESS BAR -->
+      <div class="mt-5">
+        <div class="w-full h-2 bg-slate-800/80 rounded-full overflow-hidden border border-slate-700/60 p-[1px]">
+          <div class="h-full bg-emerald-500 rounded-full transition-all duration-700 ease-out" 
+               :style="'width: ' + (completionProgress() * 100) + '%'"></div>
+        </div>
+        <div class="flex justify-between items-center mt-2.5">
+          <span class="text-[11px] text-slate-400 font-medium" x-text="completionProgressPercent() + '% syllabus finished'">0% finished</span>
+          <span class="text-[11px] text-emerald-400 font-bold bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-900/40" x-text="completedCount() + '/' + allDays.length + ' Days Completed'">0/60 Days</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= MAIN CONTAINER ================= -->
+  <main class="flex-grow max-w-4xl w-full mx-auto px-4 py-6 md:py-8 lg:px-6">
+    
+    <!-- ================= DAY PLANNER TAB ================= -->
+    <div x-show="currentTab === 'planner'" class="space-y-6 transition-all duration-300">
+      
+      <!-- CONTROLS & GRID MAP ACTION BAR -->
+      <div class="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
+        <!-- Search bar input -->
+        <div class="relative flex-grow">
+          <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+          </div>
+          <input type="text" 
+                 x-model="searchQuery" 
+                 placeholder="Search topics (e.g. Krebs, Bohr, Vector, Cell)" 
+                 class="w-full pl-11 pr-10 py-3 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/25 focus:border-indigo-600 text-[13px] shadow-sm transition">
+          <button x-show="searchQuery" @click="searchQuery = ''" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+          </button>
+        </div>
+        
+        <!-- Toggle map button -->
+        <button @click="showFullGrid = !showFullGrid" 
+                class="flex items-center justify-center gap-2 px-5 py-3 rounded-xl border font-bold text-[13px] shadow-sm transition duration-200"
+                :class="showFullGrid ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-indigo-600 border-slate-200 hover:bg-slate-50'">
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" x-show="!showFullGrid"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" x-show="showFullGrid"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+          <span x-text="showFullGrid ? 'Hide Map' : '60 Days Map'">60 Days Map</span>
+        </button>
+      </div>
+
+      <!-- EXPANDABLE 60-DAY PROGRESS MAP MAP -->
+      <div x-show="showFullGrid" 
+           x-transition:enter="transition ease-out duration-300"
+           x-transition:enter-start="opacity-0 -translate-y-4"
+           x-transition:enter-end="opacity-100 translate-y-0"
+           x-transition:leave="transition ease-in duration-200"
+           x-transition:leave-start="opacity-100 translate-y-0"
+           x-transition:leave-end="opacity-0 -translate-y-4"
+           class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+        <h3 class="font-bold text-slate-900 text-sm mb-3.5 flex items-center gap-2">
+          <span>CEE Nepal 60-Day Progress Map</span>
+        </h3>
+        <div class="grid grid-cols-6 sm:grid-cols-10 gap-2 max-h-[220px] overflow-y-auto pr-1">
+          <template x-for="day in allDays" :key="day.dayNumber">
+            <button @click="selectDay(day.dayNumber)" 
+                    class="h-10 rounded-lg flex flex-col items-center justify-center relative font-mono text-[12px] font-bold border transition group"
+                    :class="[
+                      selectedDayNumber === day.dayNumber ? 'bg-indigo-600 text-white border-indigo-900 shadow-md ring-2 ring-indigo-600/10' : 
+                      isCompleted(day.dayNumber) ? 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100' : 
+                      'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300'
+                    ]">
+              <span x-text="day.dayNumber">1</span>
+              <!-- Completed mini checkbadge -->
+              <span x-show="isCompleted(day.dayNumber)" class="absolute bottom-1 right-1 w-2 h-2 rounded-full bg-emerald-500 border border-white"></span>
+            </button>
+          </template>
+        </div>
+      </div>
+
+      <!-- HORIZONTAL BADGES SLIDER (Horizontal Carousel if Map is closed) -->
+      <div x-show="!showFullGrid" class="flex gap-2.5 overflow-x-auto pb-1 scrollbar-none scroll-smooth">
+        <template x-for="day in filteredDays()" :key="day.dayNumber">
+          <button @click="selectDay(day.dayNumber)" 
+                  class="flex-shrink-0 px-4 py-2.5 rounded-xl border flex items-center gap-2 text-xs font-bold shadow-sm transition"
+                  :class="[
+                    selectedDayNumber === day.dayNumber ? 'bg-indigo-600 text-white border-indigo-900 shadow-sm' : 
+                    isCompleted(day.dayNumber) ? 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100' : 
+                    'bg-white text-slate-800 border-slate-200 hover:bg-slate-50'
+                  ]">
+            <span x-text="'Day ' + day.dayNumber">Day 1</span>
+            <!-- Completed indicator inside pill badge -->
+            <svg x-show="isCompleted(day.dayNumber)" class="h-3.5 w-3.5 text-emerald-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+          </button>
+        </template>
+        
+        <!-- Search query zero state prompt inside slider wrapper -->
+        <template x-if="filteredDays().length === 0">
+          <div class="py-2.5 px-4 text-xs font-semibold text-slate-500 bg-slate-100 border border-slate-200 rounded-xl flex items-center gap-2">
+            <span>No topics found match searching target.</span>
+          </div>
+        </template>
+      </div>
+
+      <!-- PLANNER MAIN SECTION -->
+      <template x-if="activeDay()">
+        <div class="space-y-5">
+          <!-- SELECTED PLAN SUMMARY CARD -->
+          <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div class="space-y-2">
+              <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-indigo-600"></span>
+                <span class="text-[10px] tracking-wider uppercase font-bold text-slate-500">CURRENT DAY BLOCK</span>
+              </div>
+              <h2 class="heading-font text-lg md:text-xl font-bold text-slate-900" x-text="'Day ' + activeDay().dayNumber + ' : Syllabus Focus'">Day 1 Syllabus</h2>
+              <span class="inline-block bg-emerald-50 text-emerald-800 border border-emerald-100 font-bold text-xs px-2.5 py-1 rounded-xl" x-text="activeDay().phase">Foundations</span>
+            </div>
+            
+            <!-- Checkbox mark done trigger -->
+            <div class="border-t md:border-t-0 border-slate-100 pt-3 md:pt-0 flex items-center md:flex-col gap-3 justify-end md:justify-center self-end md:self-center">
+              <button @click="toggleCompletion(activeDay().dayNumber)" 
+                      class="flex items-center gap-2.5 px-4.5 py-2.5 rounded-xl border font-bold text-[13px] shadow-sm transition"
+                      :class="isCompleted(activeDay().dayNumber) ? 'bg-emerald-500 text-white border-emerald-600 hover:bg-emerald-600' : 'bg-slate-50 text-slate-800 border-slate-200 hover:bg-slate-100'">
+                <svg class="h-4.5 w-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" x-show="!isCompleted(activeDay().dayNumber)"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
+                <svg class="h-4.5 w-4.5" fill="currentColor" viewBox="0 0 20 20" x-show="isCompleted(activeDay().dayNumber)"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+                <span x-text="isCompleted(activeDay().dayNumber) ? 'Completed!' : 'Mark Checked Done'">Mark done</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- FIVE SUBJECT RECTANGLES GROUP -->
+          <div>
+            <h3 class="font-bold text-slate-900 text-[13.5px] tracking-tight mb-3 px-1 flex items-center gap-2">
+              <span class="w-1.5 h-3.5 bg-indigo-600 rounded-full"></span>
+              <span>Daily Syllabus Targets (MEC Weighted)</span>
+            </h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
+              <!-- PHYSICS CARD -->
+              <div class="bg-white border border-indigo-100 hover:border-indigo-300 rounded-2xl p-4.5 shadow-sm transition flex gap-3.5 md:flex-col">
+                <div class="w-2.5 h-2.5 rounded-full bg-indigo-500 shrink-0 md:mb-1.5 mt-1.5 md:mt-0"></div>
+                <div class="space-y-1">
+                  <h4 class="font-bold text-xs text-indigo-500 tracking-wide uppercase">⚛️ Physics (50 Qs)</h4>
+                  <p class="text-xs text-slate-700 leading-relaxed font-medium" x-text="activeDay().physics"></p>
+                </div>
+              </div>
+              <!-- CHEMISTRY CARD -->
+              <div class="bg-white border border-indigo-100 hover:border-indigo-300 rounded-2xl p-4.5 shadow-sm transition flex gap-3.5 md:flex-col">
+                <div class="w-2.5 h-2.5 rounded-full bg-indigo-600 shrink-0 md:mb-1.5 mt-1.5 md:mt-0"></div>
+                <div class="space-y-1">
+                  <h4 class="font-bold text-xs text-indigo-600 tracking-wide uppercase">🧪 Chemistry (50 Qs)</h4>
+                  <p class="text-xs text-slate-700 leading-relaxed font-medium" x-text="activeDay().chemistry"></p>
+                </div>
+              </div>
+              <!-- ZOOLOGY CARD -->
+              <div class="bg-white border border-emerald-100 hover:border-emerald-300 rounded-2xl p-4.5 shadow-sm transition flex gap-3.5 md:flex-col">
+                <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0 md:mb-1.5 mt-1.5 md:mt-0"></div>
+                <div class="space-y-1">
+                  <h4 class="font-bold text-xs text-emerald-600 tracking-wide uppercase">🦁 Zoology (40 Qs)</h4>
+                  <p class="text-xs text-slate-700 leading-relaxed font-medium" x-text="activeDay().zoology"></p>
+                </div>
+              </div>
+              <!-- BOTANY CARD -->
+              <div class="bg-white border border-emerald-100 hover:border-emerald-300 rounded-2xl p-4.5 shadow-sm transition flex gap-3.5 md:flex-col">
+                <div class="w-2.5 h-2.5 rounded-full bg-emerald-600 shrink-0 md:mb-1.5 mt-1.5 md:mt-0"></div>
+                <div class="space-y-1">
+                  <h4 class="font-bold text-xs text-emerald-700 tracking-wide uppercase">🌿 Botany (40 Qs)</h4>
+                  <p class="text-xs text-slate-700 leading-relaxed font-medium" x-text="activeDay().botany"></p>
+                </div>
+              </div>
+              <!-- MAT CARD -->
+              <div class="bg-white border border-slate-200 hover:border-slate-300 rounded-2xl p-4.5 shadow-sm transition flex gap-3.5 md:flex-col">
+                <div class="w-2.5 h-2.5 rounded-full bg-slate-700 shrink-0 md:mb-1.5 mt-1.5 md:mt-0"></div>
+                <div class="space-y-1">
+                  <h4 class="font-bold text-xs text-slate-600 tracking-wide uppercase">🧩 Mental Agility (20)</h4>
+                  <p class="text-xs text-slate-700 leading-relaxed font-medium" x-text="activeDay().mat"></p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- TIME EXCLUSION STUDY BLOCKS -->
+          <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+            <h3 class="font-bold text-slate-900 text-sm mb-1.5 flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
+              <span>MEC Institute Classroom Exclusion Loop</span>
+            </h3>
+            <p class="text-[11px] text-slate-500 font-medium leading-relaxed mb-4">Self-study triggers start strictly outside the 6:00 AM to 11:00 AM classroom panels:</p>
+            
+            <div class="divide-y divide-slate-100 text-[11px]">
+              <div class="py-2.5 flex items-start gap-4">
+                <span class="font-bold text-slate-400 w-32 shrink-0">06:00 AM - 11:00 AM</span>
+                <span class="text-slate-400 shrink-0 font-bold">[EXCLUDED]</span>
+                <span class="text-slate-400 flex-grow font-normal">Classroom session at coaching institute (Excluded from independent study list)</span>
+              </div>
+              <div class="py-2.5 flex items-start gap-4">
+                <span class="font-bold text-indigo-600 w-32 shrink-0">11:00 AM - 12:00 PM</span>
+                <span class="text-slate-600 font-medium flex-grow">Lunch & travel decompression transition</span>
+              </div>
+              <div class="py-2.5 flex items-start gap-4">
+                <span class="font-bold text-indigo-600 w-32 shrink-0">12:00 PM - 02:00 PM</span>
+                <span class="text-slate-800 font-bold shrink-0">⚛️ Physics block on:</span>
+                <span class="text-slate-600 whitespace-nowrap overflow-hidden text-ellipsis flex-grow" x-text="activeDay().physics"></span>
+              </div>
+              <div class="py-2.5 flex items-start gap-4">
+                <span class="font-bold text-indigo-600 w-32 shrink-0">02:00 PM - 04:00 PM</span>
+                <span class="text-slate-800 font-bold shrink-0">🧪 Chemistry block on:</span>
+                <span class="text-slate-600 whitespace-nowrap overflow-hidden text-ellipsis flex-grow" x-text="activeDay().chemistry"></span>
+              </div>
+              <div class="py-2.5 flex items-start gap-4">
+                <span class="font-bold text-indigo-600 w-32 shrink-0">04:00 PM - 04:30 PM</span>
+                <span class="text-slate-600 font-medium flex-grow">☕ Mindful relaxation and breathing break</span>
+              </div>
+              <div class="py-2.5 flex items-start gap-4">
+                <span class="font-bold text-indigo-600 w-32 shrink-0">04:30 PM - 06:00 PM</span>
+                <span class="text-slate-800 font-bold shrink-0">🦁 Zoology block on:</span>
+                <span class="text-slate-600 whitespace-nowrap overflow-hidden text-ellipsis flex-grow" x-text="activeDay().zoology"></span>
+              </div>
+              <div class="py-2.5 flex items-start gap-4">
+                <span class="font-bold text-indigo-600 w-32 shrink-0">06:00 PM - 07:30 PM</span>
+                <span class="text-slate-800 font-bold shrink-0">🌿 Botany block on:</span>
+                <span class="text-slate-600 whitespace-nowrap overflow-hidden text-ellipsis flex-grow" x-text="activeDay().botany"></span>
+              </div>
+              <div class="py-2.5 flex items-start gap-4">
+                <span class="font-bold text-indigo-600 w-32 shrink-0">07:30 PM - 08:30 PM</span>
+                <span class="text-slate-800 font-bold shrink-0">🧩 MAT study block:</span>
+                <span class="text-slate-600 whitespace-nowrap overflow-hidden text-ellipsis flex-grow" x-text="activeDay().mat"></span>
+              </div>
+              <div class="py-2.5 flex items-start gap-4">
+                <span class="font-bold text-indigo-600 w-32 shrink-0">08:30 PM - 09:30 PM</span>
+                <span class="text-slate-600 font-medium flex-grow">🍲 Dinner & family interaction</span>
+              </div>
+              <div class="py-2.5 flex items-start gap-4">
+                <span class="font-bold text-indigo-600 w-32 shrink-0">09:30 PM - 11:00 PM</span>
+                <span class="text-slate-600 font-medium flex-grow">📝 MCQ practice tracker: Attempt matching mock items & count final score</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- LOCAL SAVED LOGS/NOTES CARD (LocalStorage implementation) -->
+          <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
+            <h3 class="font-bold text-slate-900 text-sm flex items-center gap-2">
+              <svg class="h-4.5 w-4.5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+              <span>Personal Practice Study Notes (Saved)</span>
+            </h3>
+            <textarea x-model="activeDayNote"
+                      placeholder="Add custom notes, weak chapters, MCQ performance or targets for Day..." 
+                      class="w-full h-24 p-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 text-xs text-slate-700 transition leading-relaxed"></textarea>
+            <div class="flex justify-between items-center pt-1.5 border-t border-slate-100">
+              <span class="text-[10px] text-slate-400 font-bold" x-show="isNoteSaved" x-transition>✔️ Note saved in local database</span>
+              <span class="text-[10px]" x-show="!isNoteSaved"></span>
+              <button @click="saveActiveNote()" 
+                      class="px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 shadow-sm transition">
+                Save Study Logs
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </template>
+    </div>
+
+    <!-- ================= SCORE CALCULATOR TAB ================= -->
+    <div x-show="currentTab === 'calc'" class="space-y-6 transition-all duration-300">
+      <div class="space-y-1">
+        <h3 class="font-bold text-slate-900 text-base flex items-center gap-2">
+          <span class="w-1.5 h-3.5 bg-indigo-600 rounded-full"></span>
+          <span>Real-Time Mock Exam Score Scoreboard</span>
+        </h3>
+        <p class="text-xs text-slate-500 leading-relaxed font-medium">Calculates using 2026 Nepal MEC marking rubric: +1 for Correct, -0.25 for Incorrect, 0 for Unanswered. Threshold is 50th percentile ranking pass.</p>
+      </div>
+
+      <!-- INPUT VALUES GRID -->
+      <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
+        <h4 class="font-bold text-xs text-indigo-600 tracking-wide uppercase">Practice Quantities</h4>
+        
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4.5">
+          <div class="space-y-2">
+            <label class="text-[11px] font-bold text-slate-700 block">Total Practice Questions</label>
+            <input type="number" 
+                   x-model.number="calcTotal" 
+                   class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/25 focus:border-indigo-600 text-[13px] font-bold shadow-sm transition">
+          </div>
+          
+          <div class="space-y-2">
+            <label class="text-[11px] font-bold text-emerald-600 block">✓ Correct Attempts</label>
+            <input type="number" 
+                   x-model.number="calcCorrect" 
+                   class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-505/25 focus:border-indigo-600 text-[13px] font-bold shadow-sm transition">
+          </div>
+          
+          <div class="space-y-2">
+            <label class="text-[11px] font-bold text-rose-500 block">✗ Incorrect Attempts</label>
+            <input type="number" 
+                   x-model.number="calcIncorrect" 
+                   class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-505/25 focus:border-indigo-600 text-[13px] font-bold shadow-sm transition">
+          </div>
+        </div>
+      </div>
+
+      <!-- ERROR VALIDATION DISCOVERY PANEL -->
+      <div x-show="!calcIsValid()" class="bg-rose-50 border border-rose-200 rounded-2xl p-4.5 shadow-sm flex items-center gap-3">
+        <svg class="h-5 w-5 text-rose-500 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
+        <p class="text-xs font-bold text-rose-800" x-text="calcErrorMessage()"></p>
+      </div>
+
+      <!-- DYNAMIC STATS PANEL (If inputs are valid) -->
+      <div x-show="calcIsValid()" class="space-y-4">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <!-- NET SCORE (MEC STYLED) -->
+          <div class="bg-slate-900 border border-slate-800 text-white rounded-2xl p-4.5 flex flex-col justify-between shadow-md">
+            <span class="text-[9px] font-bold text-indigo-300 tracking-wider">NET SCORE (MEC RULE)</span>
+            <span class="text-3xl font-black text-white font-mono mt-1" x-text="netScore().toFixed(2)">0.00</span>
+            <span class="text-[10px] text-slate-400 mt-2 block" x-text="'out of ' + calcTotal + ' questions'">out of 200</span>
+          </div>
+
+          <!-- ACCURACY RATE -->
+          <div class="bg-white border border-slate-200 rounded-2xl p-4.5 flex flex-col justify-between shadow-sm">
+            <span class="text-[9px] font-bold text-slate-500 tracking-wider">ACCURACY RANKING</span>
+            <span class="text-3xl font-black text-slate-800 font-mono mt-1" x-text="accuracyRate().toFixed(1) + '%'">0.0%</span>
+            <span class="text-[10px] text-slate-500 mt-2 block" x-text="calcCorrect + ' correct vs ' + calcIncorrect + ' wrong'"></span>
+          </div>
+
+          <!-- TARGET GROUP PERCENTILE ESTIMATION -->
+          <div class="bg-white border border-slate-200 rounded-2xl p-4.5 flex flex-col justify-between shadow-sm">
+            <span class="text-[9px] font-bold text-slate-500 tracking-wider">PERCENTILE CATEGORY</span>
+            <span class="text-lg font-black text-slate-800 mt-1" x-text="percentileCategory()">Passed Group</span>
+            <span class="text-[10px] text-slate-500 block leading-tight mt-2">Projection based on standard 2025 medical stats</span>
+          </div>
+        </div>
+
+        <!-- MOTIVATION COMPASS DISCOVERY -->
+        <div class="p-5 rounded-2xl border transition-colors duration-300"
+             :class="tierColorClass().bg + ' ' + tierColorClass().border">
+          <div class="flex items-start gap-3.5">
+            <span class="text-2xl" x-text="tierQuote().icon">🎓</span>
+            <div class="space-y-1">
+              <h4 class="font-extrabold text-sm" :class="tierColorClass().text" x-text="tierQuote().title">Excellent Standing</h4>
+              <p class="text-xs leading-relaxed font-medium" :class="tierColorClass().subText" x-text="tierQuote().quote"></p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ================= FOCUS TIMER TAB ================= -->
+    <div x-show="currentTab === 'timer'" class="max-w-md mx-auto space-y-6 transition-all duration-300">
+      
+      <div class="text-center space-y-1.5">
+        <h3 class="font-bold text-slate-900 text-base">Pomodoro Study Engine</h3>
+        <p class="text-xs text-slate-500 leading-relaxed font-medium">Maximize retention by focusing on continuous micro blocks, punctuated by brief mindful pauses.</p>
+      </div>
+
+      <!-- TIMER PANEL DISPLAY -->
+      <div class="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm flex flex-col items-center justify-center space-y-6 relative overflow-hidden">
+        <!-- Floating mini mode indicator top right -->
+        <span class="absolute top-4 right-4 px-3 py-1 text-[10px] font-bold rounded-full border tracking-wide"
+              :class="timerMode === 'work' ? 'bg-indigo-50 text-indigo-800 border-indigo-100' : 'bg-emerald-50 text-emerald-800 border-emerald-100'"
+              x-text="timerMode === 'work' ? '💻 STUDY WORK BLOCK' : '🌿 DECOMPRESS BREAK'"></span>
+              
+        <!-- TIMER COUNTER DIAL -->
+        <div class="relative w-48 h-48 rounded-full border-4 border-slate-100 flex flex-col items-center justify-center shadow-inner">
+          <!-- Active running border gradient orb mimicking a progress loop -->
+          <div class="absolute inset-[-4px] rounded-full border-4 pointer-events-none transition-all duration-300"
+               :class="timerMode === 'work' ? 'border-indigo-600/30' : 'border-emerald-500/30'"
+               :style="'opacity: ' + (timerStatus === 'running' ? '1' : '0.2')"></div>
+               
+          <span class="font-mono text-4xl md:text-5xl font-black text-slate-800 tracking-tighter" x-text="formatTimeLeft()">25:00</span>
+          <span class="text-[10px] tracking-widest text-slate-400 font-extrabold mt-1.5 uppercase" x-text="timerStatus">IDLE</span>
+        </div>
+
+        <!-- CONTROLS CONTAINER -->
+        <div class="flex items-center gap-3.5">
+          <!-- PLAY TRIGGER -->
+          <button @click="startTimer()" 
+                  x-show="timerStatus !== 'running'"
+                  class="w-14 h-14 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full flex items-center justify-center shadow-md shadow-indigo-600/15 transition active:scale-95">
+            <svg class="h-6 w-6 transform translate-x-0.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"></path></svg>
+          </button>
+          
+          <!-- PAUSE TRIGGER -->
+          <button @click="pauseTimer()" 
+                  x-show="timerStatus === 'running'"
+                  class="w-14 h-14 bg-amber-500 hover:bg-amber-600 text-white rounded-full flex items-center justify-center shadow-md transition active:scale-95">
+            <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
+          </button>
+          
+          <!-- RESET TRIGGER -->
+          <button @click="resetTimer()" 
+                  class="w-10 h-10 border border-slate-200 hover:border-slate-300 bg-white text-slate-600 rounded-full flex items-center justify-center transition active:scale-95">
+            <svg class="h-4.5 w-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 19l-2.762-2.762"></path></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- TIMER CONFIG CARD -->
+      <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
+        <h4 class="font-bold text-xs text-indigo-600 tracking-wide uppercase">Custom Study Intervals (Mins)</h4>
+        
+        <div class="grid grid-cols-2 gap-4">
+          <div class="space-y-1.5">
+            <label class="text-[10px] font-bold text-slate-700 block">Work Session</label>
+            <input type="number" 
+                   x-model.number="workMinutes" 
+                   @change="handleIntervalUpdate()"
+                   class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-505/25 focus:border-indigo-600 text-xs font-bold text-slate-800 shadow-sm transition">
+          </div>
+          
+          <div class="space-y-1.5">
+            <label class="text-[10px] font-bold text-emerald-700 block">Decompress Break</label>
+            <input type="number" 
+                   x-model.number="breakMinutes" 
+                   @change="handleIntervalUpdate()"
+                   class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-505/25 focus:border-indigo-600 text-xs font-bold text-slate-800 shadow-sm transition">
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- ================= TOPPER OVERLAY COMPLETION DIALOG ================= -->
+  <div x-show="showTimerModal" 
+       class="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs transition duration-300"
+       x-transition>
+    <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-xl border border-slate-100 text-center space-y-4.5">
+      <div class="h-14 w-14 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mx-auto border border-emerald-100">
+        <svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+      </div>
+      
+      <div class="space-y-1">
+        <h3 class="font-bold text-slate-900 text-base" x-text="timerMode === 'work' ? 'Work Block Complete!' : 'Break Time Complete!'">Focus Complete!</h3>
+        <p class="text-xs text-slate-500 leading-relaxed" x-text="timerMode === 'work' ? 'Phenomenal focus! Take a mindful, well-deserved 5-minute break to decompress the brain.' : 'Ready to recommence? Back to focus block for ultimate preparation.'"></p>
+      </div>
+      
+      <button @click="dismissTimerModal()" 
+              class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md transition">
+        Continue
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= BOTTOM NAVIGATION TABS HEADER ================= -->
+  <footer class="bg-white border-t border-slate-200 sticky bottom-0 left-0 right-0 z-40">
+    <div class="max-w-4xl mx-auto flex items-stretch">
+      
+      <!-- PLANNER TAB -->
+      <button @click="currentTab = 'planner'" 
+              class="flex-1 py-4.5 flex flex-col items-center justify-center gap-1 transition"
+              :class="currentTab === 'planner' ? 'text-indigo-600 border-t-2 border-indigo-600 font-extrabold' : 'text-slate-500 hover:text-slate-800 font-medium'">
+        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+        <span class="text-[10px] uppercase tracking-wider">Day Planner</span>
+      </button>
+      
+      <!-- CALCULATOR TAB -->
+      <button @click="currentTab = 'calc'" 
+              class="flex-1 py-4.5 flex flex-col items-center justify-center gap-1 transition"
+              :class="currentTab === 'calc' ? 'text-indigo-600 border-t-2 border-indigo-600 font-extrabold' : 'text-slate-500 hover:text-slate-800 font-medium'">
+        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+        <span class="text-[10px] uppercase tracking-wider">Score Calculator</span>
+      </button>
+      
+      <!-- TIMER TAB -->
+      <button @click="currentTab = 'timer'" 
+              class="flex-1 py-4.5 flex flex-col items-center justify-center gap-1 transition"
+              :class="currentTab === 'timer' ? 'text-indigo-600 border-t-2 border-indigo-600 font-extrabold' : 'text-slate-500 hover:text-slate-800 font-medium'">
+        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        <span class="text-[10px] uppercase tracking-wider">Focus Timer</span>
+      </button>
+      
+    </div>
+  </footer>
+
+  <!-- Load /data.js containing the studyDays database -->
+  <script src="data.js"></script>
+
+  <!-- App Custom Logic Script -->
+  <script>
+    function ceeApp() {
+      return {
+        allDays: [],
+        currentTab: 'planner',
+        searchQuery: '',
+        selectedDayNumber: 1,
+        completedDays: [],
+        notes: {},
+        activeDayNote: '',
+        isNoteSaved: false,
+        showFullGrid: false,
+        
+        // Calculator variables
+        calcTotal: 200,
+        calcCorrect: 140,
+        calcIncorrect: 40,
+        
+        // Timer variables
+        timerMode: 'work', // 'work' or 'break'
+        timerStatus: 'idle', // 'idle' or 'running'
+        workMinutes: 25,
+        breakMinutes: 5,
+        timeLeft: 1500, // in seconds
+        intervalId: null,
+        showTimerModal: false,
+
+        init() {
+          // Bind the studyDays loaded from data.js
+          if (typeof studyDays !== 'undefined') {
+            this.allDays = studyDays;
+          } else {
+            console.error('Data file data.js was not loaded properly!');
+          }
+          
+          // Restore LocalStorage state
+          if (localStorage.getItem('cee_completed')) {
+            try {
+              this.completedDays = JSON.parse(localStorage.getItem('cee_completed'));
+            } catch(e) {}
+          }
+          if (localStorage.getItem('cee_notes')) {
+            try {
+              this.notes = JSON.parse(localStorage.getItem('cee_notes'));
+            } catch(e) {}
+          }
+          if (localStorage.getItem('cee_calc')) {
+            try {
+              const savedCalc = JSON.parse(localStorage.getItem('cee_calc'));
+              this.calcTotal = savedCalc.total || 200;
+              this.calcCorrect = savedCalc.correct || 140;
+              this.calcIncorrect = savedCalc.incorrect || 40;
+            } catch(e) {}
+          }
+
+          // Fetch original active day notes
+          this.loadActiveNote();
+          
+          // Set initial timer clocks
+          this.timeLeft = this.workMinutes * 60;
+          
+          // Watch nested properties and persist calculations real-time
+          this.$watch('calcTotal', () => this.saveCalcState());
+          this.$watch('calcCorrect', () => this.saveCalcState());
+          this.$watch('calcIncorrect', () => this.saveCalcState());
+          this.$watch('selectedDayNumber', () => this.loadActiveNote());
+        },
+
+        // ================= COMPLETED PERCENTAGE CALCULATOR =================
+        completedCount() {
+          return this.completedDays.length;
+        },
+        
+        completionProgress() {
+          if (this.allDays.length === 0) return 0;
+          return this.completedDays.length / this.allDays.length;
+        },
+        
+        completionProgressPercent() {
+          return Math.round(this.completionProgress() * 100);
+        },
+
+        isCompleted(dayNum) {
+          return this.completedDays.includes(dayNum);
+        },
+
+        toggleCompletion(dayNum) {
+          if (this.completedDays.includes(dayNum)) {
+            this.completedDays = this.completedDays.filter(n => n !== dayNum);
+          } else {
+            this.completedDays.push(dayNum);
+          }
+          localStorage.setItem('cee_completed', JSON.stringify(this.completedDays));
+        },
+
+        // ================= CAROUSEL / GRID DAY SELECTION =================
+        selectDay(dayNum) {
+          this.selectedDayNumber = dayNum;
+        },
+
+        activeDay() {
+          return this.allDays.find(d => d.dayNumber === this.selectedDayNumber);
+        },
+
+        filteredDays() {
+          if (!this.searchQuery) return this.allDays;
+          
+          const q = this.searchQuery.toLowerCase().trim();
+          return this.allDays.filter(d => 
+            d.physics.toLowerCase().includes(q) ||
+            d.chemistry.toLowerCase().includes(q) ||
+            d.zoology.toLowerCase().includes(q) ||
+            d.botany.toLowerCase().includes(q) ||
+            d.mat.toLowerCase().includes(q) ||
+            ('day ' + d.dayNumber).includes(q)
+          );
+        },
+
+        // ================= LOG NOTES PERSISTENCE =================
+        loadActiveNote() {
+          this.activeDayNote = this.notes[this.selectedDayNumber] || '';
+          this.isNoteSaved = false;
+        },
+
+        saveActiveNote() {
+          this.notes[this.selectedDayNumber] = this.activeDayNote;
+          localStorage.setItem('cee_notes', JSON.stringify(this.notes));
+          this.isNoteSaved = true;
+          setTimeout(() => { this.isNoteSaved = false; }, 3000);
+        },
+
+        // ================= SCORE KEEPER FORMULA LOGIC =================
+        saveCalcState() {
+          localStorage.setItem('cee_calc', JSON.stringify({
+            total: this.calcTotal,
+            correct: this.calcCorrect,
+            incorrect: this.calcIncorrect
+          }));
+        },
+
+        calcIsValid() {
+          return (this.calcCorrect >= 0 && this.calcIncorrect >= 0 && (this.calcCorrect + this.calcIncorrect) <= this.calcTotal);
+        },
+
+        calcErrorMessage() {
+          if (this.calcCorrect < 0 || this.calcIncorrect < 0) {
+            return "Values can not be negative integers.";
+          }
+          if ((this.calcCorrect + this.calcIncorrect) > this.calcTotal) {
+            return "Correct attempts and incorrect attempts (" + (this.calcCorrect + this.calcIncorrect) + ") can not exceed total questions (" + this.calcTotal + ").";
+          }
+          return null;
+        },
+
+        netScore() {
+          if (!this.calcIsValid()) return 0;
+          return this.calcCorrect - (this.calcIncorrect * 0.25);
+        },
+
+        accuracyRate() {
+          const totalAnswered = this.calcCorrect + this.calcIncorrect;
+          if (totalAnswered === 0) return 0;
+          return (this.calcCorrect / totalAnswered) * 100;
+        },
+
+        percentileCategory() {
+          const score = this.netScore();
+          if (score >= 150) return "Top 1% Rank (Outstanding)";
+          if (score >= 125) return "Top 5% Rank (Highly Competitive)";
+          if (score >= 100) return "Top 15% Rank (Strong Merit block)";
+          if (score >= 80) return "In Passing bracket (Qualified)";
+          return "Needs target practice study loops";
+        },
+
+        tierColorClass() {
+          const score = this.netScore();
+          if (score >= 125) {
+            return {
+              bg: 'bg-emerald-50',
+              border: 'border-emerald-200',
+              text: 'text-emerald-800',
+              subText: 'text-emerald-700/80'
+            };
+          }
+          if (score >= 80) {
+            return {
+              bg: 'bg-indigo-50',
+              border: 'border-indigo-100',
+              text: 'text-indigo-800',
+              subText: 'text-indigo-700/80'
+            };
+          }
+          return {
+            bg: 'bg-rose-50',
+            border: 'border-rose-200',
+            text: 'text-rose-800',
+            subText: 'text-rose-700/80'
+          };
+        },
+
+        tierQuote() {
+          const score = this.netScore();
+          if (score >= 150) {
+            return {
+              icon: '🚀',
+              title: 'Mastery Tier (Outstanding)',
+              quote: 'Sensational standing! You satisfy all merit brackets cleanly. Keep taking continuous micro tests daily to stabilize this apex shape.'
+            };
+          }
+          if (score >= 125) {
+            return {
+              icon: '👑',
+              title: 'Competitive Tier',
+              quote: 'Brilliant percentile metrics! Focus intensely on secondary pillars (Botany physiology, organic reagents) to secure premium government hostel rankings.'
+            };
+          }
+          if (score >= 80) {
+            return {
+              icon: '🎯',
+              title: 'Qualified Bracket',
+              quote: 'Consistent passing score, but margins are high. Bolster speed in Zoology histology and Physics formula sheets to leap into top merit list!'
+            };
+          }
+          return {
+            icon: '⚡',
+            title: 'Action Trigger Needed',
+            quote: 'Currently below competitive ranks. Do not discourage! Isolate wrong questions, log key doubts inside Planner Notes, and practice 40 target MCQs systematically.'
+          };
+        },
+
+        // ================= POMODORO STUDIER =================
+        formatTimeLeft() {
+          const m = Math.floor(this.timeLeft / 60);
+          const s = this.timeLeft % 60;
+          return (m < 10 ? '0' + m : m) + ':' + (s < 10 ? '0' + s : s);
+        },
+
+        startTimer() {
+          if (this.timerStatus === 'running') return;
+          this.timerStatus = 'running';
+          this.intervalId = setInterval(() => {
+            if (this.timeLeft > 0) {
+              this.timeLeft--;
+            } else {
+              this.timerComplete();
+            }
+          }, 1000);
+        },
+
+        pauseTimer() {
+          this.timerStatus = 'paused';
+          clearInterval(this.intervalId);
+        },
+
+        resetTimer() {
+          this.timerStatus = 'idle';
+          clearInterval(this.intervalId);
+          this.timeLeft = (this.timerMode === 'work' ? this.workMinutes : this.breakMinutes) * 60;
+        },
+
+        handleIntervalUpdate() {
+          if (this.timerStatus === 'idle') {
+            this.resetTimer();
+          }
+        },
+
+        timerComplete() {
+          this.pauseTimer();
+          this.playSyntheticBuzzer();
+          this.showTimerModal = true;
+        },
+
+        dismissTimerModal() {
+          this.showTimerModal = false;
+          // Toggle modes automatically after dismiss
+          this.timerMode = (this.timerMode === 'work' ? 'break' : 'work');
+          this.resetTimer();
+        },
+
+        // Play synthetic beep via Web Audio API so zero network request dependencies exist!
+        playSyntheticBuzzer() {
+          try {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (!AudioContext) return;
+            const ctx = new AudioContext();
+            
+            // Beep 1
+            const osc = ctx.createOscillator();
+            const gainNode = ctx.createGain();
+            osc.connect(gainNode);
+            gainNode.connect(ctx.destination);
+            
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(880, ctx.currentTime); // high-pitched alert
+            gainNode.gain.setValueAtTime(0.4, ctx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.8);
+            
+            osc.start();
+            osc.stop(ctx.currentTime + 0.8);
+            
+            // Beep 2 starting 0.2s after
+            setTimeout(() => {
+              const osc2 = ctx.createOscillator();
+              const gainNode2 = ctx.createGain();
+              osc2.connect(gainNode2);
+              gainNode2.connect(ctx.destination);
+              osc2.type = 'sine';
+              osc2.frequency.setValueAtTime(880, ctx.currentTime);
+              gainNode2.gain.setValueAtTime(0.4, ctx.currentTime);
+              gainNode2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.8);
+              osc2.start();
+              osc2.stop(ctx.currentTime + 0.8);
+            }, 200);
+            
+          } catch (e) {
+            console.warn('Audio feedback failed or was blocked by modern browser security:', e);
+          }
+        }
+      };
+    }
+  </script>
+</body>
+</html>
